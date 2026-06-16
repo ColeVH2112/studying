@@ -22,6 +22,16 @@ spec disagree, the spec wins; anything here is a documented, intentional choice.
   module that touches `localStorage`; its test supplies a minimal in-memory
   `localStorage` stub rather than pulling in `jsdom` (which is not a SPEC §3 dep).
 
+## Dependencies
+
+- **Added `@types/node` (devDependency).** SPEC §3 doesn't list it, but
+  `scripts/validate-content.ts` (the `npm run validate` gate) and `vite.config.ts`
+  use Node built-ins (`node:fs`, `node:path`, `process`). It typechecked locally
+  via a transitively-hoisted copy, but a clean `npm ci` in CI didn't include it,
+  so `npm run typecheck` failed in the Pages deploy. Declaring it explicitly pins
+  it in the lockfile so CI and local agree. Pinned to `^20` to match the CI
+  runner's Node 20 (SPEC §12).
+
 ## Content & engines
 
 - **`MentalMathItem` carries `value` (+ optional `tolerance`).** SPEC §7.4 states
