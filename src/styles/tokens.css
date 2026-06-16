@@ -1,0 +1,69 @@
+/* QuantFeed design tokens — SPEC §9.
+ * Concept: scratch paper under exam pressure. The interface is the graph-paper
+ * sheet these problems get solved on. Every color in the app comes from here. */
+
+:root {
+  /* Palette (§9) */
+  --paper:        #F7F8F5; /* cool off-white sheet */
+  --grid:         #E4E9E2; /* faint graph rules */
+  --ink:          #1B1E22; /* primary text */
+  --ink-soft:     #5A6066; /* secondary text */
+  --ballpoint:    #2545D8; /* single accent: links, reveals, focus, active states */
+  --grading-red:  #C2382E; /* incorrect verdicts only */
+  --ledger-green: #2E7D4F; /* correct verdicts only */
+
+  /* Derived tints (kept as transparent washes of the named colors so the
+   * palette stays honest — no new hues are introduced) */
+  --ballpoint-wash: color-mix(in srgb, var(--ballpoint) 8%, transparent);
+  --red-wash:       color-mix(in srgb, var(--grading-red) 9%, transparent);
+  --green-wash:     color-mix(in srgb, var(--ledger-green) 10%, transparent);
+  --ink-hairline:   color-mix(in srgb, var(--ink) 12%, transparent);
+
+  /* Graph-paper grid */
+  --grid-size: 24px;
+
+  /* Type (§9). IBM Plex Sans for UI/body; IBM Plex Mono (tabular) for timers,
+   * scores, difficulty dots, answer inputs. KaTeX carries the math untouched. */
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --fs-xs:   0.78rem;
+  --fs-sm:   0.88rem;
+  --fs-base: 1rem;
+  --fs-md:   1.12rem;
+  --fs-lg:   1.32rem;
+  --fs-xl:   1.7rem;
+  --fs-2xl:  2.4rem;
+  --fs-drill: clamp(2.6rem, 9vw, 5rem);
+
+  --lh-tight: 1.25;
+  --lh-body:  1.6;
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* Layout */
+  --content-max: 680px; /* §9 quality floor: 680px max content column */
+  --radius: 6px;
+  --tap-min: 44px;      /* mobile-safe tap targets */
+
+  /* Motion (§9): 160ms ease-out reveals; nothing else animates */
+  --reveal-ms: 160ms;
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --reveal-shift: 10px;
+}
+
+/* Honor prefers-reduced-motion by collapsing slide distance to zero (slides
+ * become fades). Durations stay so the cross-fade is still perceptible. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --reveal-shift: 0px;
+  }
+}
