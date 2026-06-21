@@ -52,6 +52,7 @@ function Dots({ n }: { n: number }) {
 function Badge({ reason }: { reason: DueReason }) {
   if (reason.kind === 'new') return <span className="badge badge--new">new</span>;
   if (reason.kind === 'ahead') return <span className="badge badge--ahead">ahead of schedule</span>;
+  if (reason.kind === 'practice') return <span className="badge badge--ahead">extra practice</span>;
   const d = reason.overdueDays;
   return (
     <span className={`badge${d > 0 ? ' badge--overdue' : ''}`}>

@@ -145,11 +145,40 @@ describe('extendFeed', () => {
     expect(ahead[0]).toBe('n2');
   });
 
-  it('never re-serves excluded ids', () => {
+  it('recycles content into endless practice once new and future are exhausted', () => {
+    // every id excluded and no future reviews → the feed must not dead-end
     const ext = extendFeed({
       problems, generators: [], reviews: [], settings: settings(), today: TODAY, rng: mulberry32(7),
       excludeIds: ['n1', 'n2', 'n3'], newBudgetLeft: 5, count: 5,
     });
-    expect(ext.length).toBe(0);
+    expect(ext.length).toBe(5);
+    expect(ext.every((x) => x.reason.kind === 'practice')).toBe(true);
+    // pool of 3 recycled to 5 — repeats allowed, but never the same id back-to-back
+    for (let i = 1; i < ext.length; i++) {
+      expect(ext[i]!.item.problem.id).not.toBe(ext[i - 1]!.item.problem.id);
+    }
+  });
+
+  it('still prefers future reviews over practice when any remain', () => {
+    const reviews = [state('n1', addDays(TODAY, 4))];
+    const ext = extendFeed({
+      problems, generators: [], reviews, settings: settings(), today: TODAY, rng: mulberry32(8),
+      excludeIds: ['n2', 'n3'], newBudgetLeft: 0, count: 5,
+    });
+    expect(ext.some((x) => x.reason.kind === 'ahead')).toBe(true);
+    expect(ext.every((x) => x.reason.kind !== 'practice')).toBe(true);
+  });
+});
+
+describe('buildFeed never dead-ends', () => {
+  it('recycles practice when nothing is due and the new pool is spent', () => {
+    // one problem, already reviewed and not due → no due, no new
+    const reviews = [state('only', addDays(TODAY, 6))];
+    const q = buildFeed({
+      problems: [P('only', 'martingales')], generators: [], reviews,
+      settings: settings({ newPerSession: 0 }), today: TODAY, rng: mulberry32(9),
+    });
+    expect(q.length).toBeGreaterThan(0);
+    expect(q.every((x) => x.reason.kind === 'practice')).toBe(true);
   });
 });

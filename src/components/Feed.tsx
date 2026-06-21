@@ -29,9 +29,13 @@ export function Feed({ today }: { today: string }) {
 
   const makeEntry = useCallback((item: ContentItem, reason: DueReason, state: ReviewState | undefined): FeedEntry => {
     const reviewCount = state?.reps ?? 0;
+    const key = `e${keySeq.current++}`;
     return {
-      key: `e${keySeq.current++}`,
-      render: materialize(item, reviewCount),
+      key,
+      // Seed generator instances with the unique card key so a problem re-served
+      // within one session (requeue / "ahead" / recycled practice) gets fresh
+      // numbers rather than repeating the exact same instance.
+      render: materialize(item, reviewCount, key),
       item,
       reason,
       priorState: state,

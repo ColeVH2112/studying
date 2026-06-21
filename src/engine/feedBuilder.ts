@@ -75,6 +75,52 @@ function weightedSample(
   return out;
 }
 
+/** Weighted sampling WITH replacement, used to recycle a small content pool into
+ *  an endless practice stream. Avoids serving the same problem id twice in a row
+ *  whenever the pool has more than one item. */
+function recycleSample(
+  rng: () => number,
+  pool: ContentItem[],
+  weightOf: (it: ContentItem) => number,
+  count: number,
+): ContentItem[] {
+  if (pool.length === 0 || count <= 0) return [];
+  const out: ContentItem[] = [];
+  let guard = 0;
+  while (out.length < count && guard++ < count + pool.length + 5) {
+    // re-shuffle the whole pool each pass so order varies between cycles
+    const batch = weightedSample(rng, pool, weightOf, pool.length);
+    for (const it of batch) {
+      if (out.length >= count) break;
+      const prev = out[out.length - 1];
+      if (pool.length > 1 && prev && prev.problem.id === it.problem.id) continue;
+      out.push(it);
+    }
+  }
+  return out;
+}
+
+/** Recycle enabled-topic content into "extra practice" cards so the feed never
+ *  dead-ends once the scheduled queue and future reviews are exhausted (§7.2 step
+ *  5, endless-scroll intent). Generator-backed problems are weighted higher
+ *  because they re-randomize and therefore carry the variety. */
+function buildPractice(
+  items: ContentItem[],
+  reviews: ReviewState[],
+  settings: Settings,
+  rng: () => number,
+  count: number,
+): QueueItem[] {
+  const enabled = new Set(settings.enabledTopics);
+  const pool = items.filter((it) => enabled.has(it.problem.topic));
+  if (pool.length === 0) return [];
+  const weights = topicWeights(items, reviews);
+  const weightOf = (it: ContentItem) =>
+    (it.kind === 'generator' ? 2 : 1) * (weights.get(it.problem.topic) ?? 1);
+  const drawn = recycleSample(rng, pool, weightOf, count);
+  return interleave(drawn.map((item): QueueItem => ({ item, reason: { kind: 'practice' } })));
+}
+
 /** Interleave so no two consecutive items share a topic when a swap within a
  *  3-item lookahead can prevent it — §7.2 step 4. In place on a copy. */
 export function interleave(queue: QueueItem[]): QueueItem[] {
@@ -144,7 +190,15 @@ export function buildFeed(args: BuildFeedArgs): QueueItem[] {
   const mixed = mix(due, sampledNew, Math.max(1, Math.round(settings.newRatio)));
 
   // 4. Interleave by topic.
-  return interleave(mixed);
+  const result = interleave(mixed);
+
+  // 5. Never start empty: when nothing is due and the new pool is exhausted,
+  //    recycle enabled-topic content into extra practice so the feed still
+  //    scrolls (and generator numbers stay fresh) instead of dead-ending.
+  if (result.length === 0) {
+    return buildPractice(items, reviews, settings, rng, Math.max(5, settings.newPerSession));
+  }
+  return result;
 }
 
 /** Round-robin mix: `ratio` due items, then one new, repeat; flush leftovers. */
@@ -216,6 +270,12 @@ export function extendFeed(args: ExtendFeedArgs): QueueItem[] {
     if (out.length >= count) break;
     out.push({ item: byId.get(s.problemId) as ContentItem, reason: { kind: 'ahead' }, state: s });
     exclude.add(s.problemId);
+  }
+
+  // c) nothing new and nothing scheduled (even in the future) → recycle content
+  //    into extra-practice cards so the feed is genuinely endless.
+  if (out.length === 0) {
+    return buildPractice(items, reviews, settings, rng, count);
   }
 
   return interleave(out);

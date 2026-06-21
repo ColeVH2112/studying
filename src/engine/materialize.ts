@@ -19,13 +19,22 @@ export interface RenderProblem {
   isGenerated: boolean;
 }
 
-export function materialize(item: ContentItem, reviewCount: number): RenderProblem {
+/**
+ * @param instanceKey  Optional extra seed component. Omitted, a generator is
+ *   seeded purely by `id|reviewCount` (SPEC §7.4: reproducible within a review).
+ *   The feed passes a per-card unique key so that a generator re-served in the
+ *   same session (requeue, "ahead", or recycled practice) shows fresh numbers
+ *   instead of repeating — otherwise every appearance within one review count
+ *   would be identical.
+ */
+export function materialize(item: ContentItem, reviewCount: number, instanceKey?: string | number): RenderProblem {
   if (item.kind === 'static') {
     const p = item.problem;
     return { ...p, isGenerated: false };
   }
   const g = item.problem;
-  const rng = rngFromString(`${g.id}|${reviewCount}`);
+  const seed = instanceKey === undefined ? `${g.id}|${reviewCount}` : `${g.id}|${reviewCount}|${instanceKey}`;
+  const rng = rngFromString(seed);
   const inst = g.generate(rng);
   return {
     id: g.id,

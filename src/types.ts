@@ -86,7 +86,8 @@ export interface ContentMeta {
 export type DueReason =
   | { kind: 'new' }
   | { kind: 'review'; overdueDays: number }
-  | { kind: 'ahead' }; // pulled from future reviews to keep the feed infinite
+  | { kind: 'ahead' }     // pulled from future reviews to keep the feed infinite
+  | { kind: 'practice' }; // recycled extra practice when nothing scheduled remains
 
 /** What `buildFeed` emits, one per card the user will scroll through (§7.2). */
 export interface QueueItem {

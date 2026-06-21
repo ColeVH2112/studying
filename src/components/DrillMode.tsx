@@ -101,7 +101,7 @@ function Picker(props: {
 
   return (
     <>
-      <p className="lead">Timed mental arithmetic. Type the answer, press Enter; Esc skips (counts wrong).</p>
+      <p className="lead">Timed mental arithmetic. Type the answer and submit (Enter or the Submit button); skip counts wrong.</p>
       <div className="preset-grid">
         {PRESETS.map((p) => (
           <button key={p.id} type="button" className="preset" onClick={() => props.onStart(p)}>
@@ -206,9 +206,13 @@ function Runner({ preset, onFinish, onAbort }: {
     setRaw('');
   };
 
+  const submit = () => record(checkDrill(item, raw));
+  const skip = () => record(false);
+
+  // Escape still skips on desktop; Enter submission is handled by the form so it
+  // works whether it comes from a hardware Return key or a soft-keyboard "Go".
   const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') { e.preventDefault(); record(checkDrill(item, raw)); }
-    else if (e.key === 'Escape') { e.preventDefault(); record(false); }
+    if (e.key === 'Escape') { e.preventDefault(); skip(); }
   };
 
   const neededRate = preset.total / preset.seconds;          // q/s required
@@ -230,17 +234,26 @@ function Runner({ preset, onFinish, onAbort }: {
       </div>
       <div className="drill__stage">
         <div className="drill__prompt">{item.prompt}</div>
-        <input
-          ref={inputRef}
-          className="drill__input"
-          type="text"
-          inputMode="decimal"
-          aria-label="Answer"
-          value={raw}
-          onChange={(e) => setRaw(e.target.value)}
-          onKeyDown={onKey}
-        />
-        <div className="drill__count mono">Enter to submit · Esc to skip</div>
+        {/* A real form so the soft-keyboard "Go"/Return submits on mobile (the
+            numeric keypad has no Enter); the buttons give a tap target too. */}
+        <form className="drill__entry" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+          <input
+            ref={inputRef}
+            className="drill__input"
+            type="text"
+            inputMode="decimal"
+            enterKeyHint="go"
+            aria-label="Answer"
+            value={raw}
+            onChange={(e) => setRaw(e.target.value)}
+            onKeyDown={onKey}
+          />
+          <div className="drill__actions btn-row">
+            <button type="submit" className="btn">Submit</button>
+            <button type="button" className="btn btn--quiet" onClick={skip}>Skip</button>
+          </div>
+        </form>
+        <div className="drill__count mono">Submit to answer · skip counts wrong</div>
         <button type="button" className="btn btn--quiet" onClick={onAbort}>End drill</button>
       </div>
     </div>

@@ -57,6 +57,17 @@ describe('materialize: fresh numbers across reviews', () => {
     expect(materialize(item, 3).statement).toBe(materialize(item, 3).statement);
   });
 
+  it('varies by instanceKey so a re-served card shows fresh numbers', () => {
+    // same reviewCount, different per-card keys → the feed must not repeat the
+    // identical instance when a generator is recycled within a session.
+    const item = { kind: 'generator', problem: dieReroll } as const;
+    const statements = new Set<string>();
+    for (let i = 0; i < 8; i++) statements.add(materialize(item, 0, `e${i}`).statement);
+    expect(statements.size).toBeGreaterThan(1);
+    // and a given key is still deterministic
+    expect(materialize(item, 0, 'e3').statement).toBe(materialize(item, 0, 'e3').statement);
+  });
+
   it('passes static problems through unchanged', () => {
     const p: Problem = { id: 'x', topic: 'bayes', techniques: ['symmetry'], difficulty: 1, source: 'original',
       statement: 'hello', hints: ['a', 'b', 'c'], solution: '**Pattern:** y',
