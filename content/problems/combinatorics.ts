@@ -43,4 +43,43 @@ expected count is exactly $1$.
     answer: { type: 'numeric', value: 1.0526315789, tolerance: 0.001, display: '20/19' },
     estMinutes: 6,
   },
+  {
+    id: 'combinatorics-permutation-records',
+    topic: 'combinatorics',
+    techniques: ['indicator-variables', 'linearity-of-expectation', 'symmetry'],
+    difficulty: 3,
+    source: 'classic-rewrite',
+    statement: r`The numbers $1$ through $5$ are arranged in a uniformly random
+order. Reading left to right, a "record" is an entry larger than everything before
+it (the first entry is always a record). What is the expected number of records?`,
+    hints: [
+      r`Finding the distribution of the record *count* is painful. Attach a $0/1$
+variable to each position and ask only about that position in isolation.`,
+      r`Indicator variables + linearity: position $j$ is a record exactly when the
+largest of the first $j$ entries happens to sit at position $j$.`,
+      r`By symmetry the maximum of the first $j$ entries is equally likely to be in
+any of those $j$ positions, so $P(\text{record at } j) = \tfrac1j$.`,
+    ],
+    solution: r`Let $I_j = 1$ if position $j$ holds a record. Among the first $j$
+entries, each is equally likely (by symmetry) to be the largest, and a record at
+$j$ means that largest one lands last — probability $\tfrac1j$. By linearity,
+
+$$E[\text{records}] = \sum_{j=1}^{5}\frac1j
+= 1 + \tfrac12 + \tfrac13 + \tfrac14 + \tfrac15 = \tfrac{137}{60} \approx 2.283.$$
+
+Sanity check: the first entry is always a record ($\tfrac11$) and later entries are
+increasingly unlikely to set one; a total of $H_5 \approx 2.28$ for five entries
+fits the $\ln n$ growth.
+
+**Pattern:** Indicator variables + linearity of expectation turn an "expected
+count" into a sum of per-item probabilities, and symmetry hands you each
+probability ($\tfrac1j$) in one line — no independence required.
+
+**Interview follow-ups:**
+- General $n$: $E[\text{records}] = H_n \approx \ln n + \gamma$.
+- Variance of the record count — the $I_j$ are in fact independent here, a pleasant
+surprise worth proving.`,
+    answer: { type: 'numeric', value: 137 / 60, display: '137/60', tolerance: 0.001 },
+    estMinutes: 5,
+  },
 ] satisfies Problem[];
